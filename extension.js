@@ -4,6 +4,7 @@ Object.defineProperty(exports, "__esModule", {
 });
 // (c) 2016-2017 Ecmel Ercan
 const vsc = require("vscode");
+var {window, commands, Disposable, ExtensionContext, StatusBarAlignment, StatusBarItem, TextDocument} = require('vscode');
 const lst = require("vscode-languageserver-types");
 const css = require("vscode-css-languageservice");
 const fs = require("fs");

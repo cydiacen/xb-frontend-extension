@@ -2,11 +2,19 @@
 
 > 本插件还处于测试阶段，还存在许多bug。如果遇到问题欢迎issue or PR.
 
+## 安装方法
+在vscode中 使用快捷键 `Ctrl+P`，然后输入命令：
+
+`ext install xb-one-enough`
+
 ## 功能点
 
 1. MarkDown 汉字统计
 
 当初做这个功能只是为了了解下大概的`vsc`插件编写方案。官方的教程是计算英文字符数，稍加点自己的逻辑，就实现了统计中文字数。并且可以方便每次自己写完md文件，清楚的知道大概码了多少汉字。
+
+
+![汉字统计](http://qacdn.1course.cn/1courseplus/sis/upload/file/21/personalavatar/20171110182458.png)
 
 2. 基于SIS前端文件架构的`component`属性提示。
 

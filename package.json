@@ -1,37 +1,41 @@
 {
-    "name": "myextension",
-    "displayName": "myextension",
-    "description": "123",
-    "version": "0.0.1",
-    "publisher": "cydiacen",
-    "engines": {
-        "vscode": "^1.5.0"
-    },
-    "categories": [
-        "Other"
-    ],
-    "activationEvents": [
-        "onLanguage:markdown",
-        "onLanguage:html"
-    ],
-    "main": "./extension",
-    "contributes": {},
-    "scripts": {
-        "postinstall": "node ./node_modules/vscode/bin/install",
-        "test": "node ./node_modules/vscode/bin/test"
-    },
-    "devDependencies": {
-        "typescript": "^2.0.3",
-        "vscode": "^1.0.0",
-        "mocha": "^2.3.3",
-        "eslint": "^3.6.0",
-        "@types/node": "^6.0.40",
-        "@types/mocha": "^2.2.32"
-    },
-    "dependencies": {
-        "json-schema": "^0.2.3",
-        "request": "^2.81.0",
-        "vscode-css-languageservice": "^2.0.3",
-        "vscode-languageserver-types": "^3.2.0"
-    }
+  "name": "xb-one-enough",
+  "displayName": "xb-one-enough",
+  "description": "just for xiaobao online frontend developer",
+  "version": "0.0.1",
+  "publisher": "cydiacen",
+  "engines": {
+    "vscode": "^1.5.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onLanguage:markdown",
+    "onLanguage:html"
+  ],
+  "main": "./extension",
+  "contributes": {},
+  "scripts": {
+    "postinstall": "node ./node_modules/vscode/bin/install",
+    "test": "node ./node_modules/vscode/bin/test"
+  },
+  "devDependencies": {
+    "@types/mocha": "^2.2.32",
+    "@types/node": "^6.0.40",
+    "ajv": "^5.3.0",
+    "eslint": "^3.6.0",
+    "har-validator": "^5.0.3",
+    "http-signature": "^1.2.0",
+    "mocha": "^2.3.3",
+    "sshpk": "^1.13.1",
+    "typescript": "^2.0.3",
+    "vscode": "^1.0.0"
+  },
+  "dependencies": {
+    "json-schema": "^0.2.3",
+    "request": "^2.81.0",
+    "vscode-css-languageservice": "^2.0.3",
+    "vscode-languageserver-types": "^3.2.0"
+  }
 }
