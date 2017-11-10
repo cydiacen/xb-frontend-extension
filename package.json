@@ -11,11 +11,11 @@
         "Other"
     ],
     "activationEvents": [
-        "onLanguage:markdown"
+        "onLanguage:markdown",
+        "onLanguage:html"
     ],
     "main": "./extension",
-    "contributes": {
-    },
+    "contributes": {},
     "scripts": {
         "postinstall": "node ./node_modules/vscode/bin/install",
         "test": "node ./node_modules/vscode/bin/test"
@@ -27,5 +27,11 @@
         "eslint": "^3.6.0",
         "@types/node": "^6.0.40",
         "@types/mocha": "^2.2.32"
+    },
+    "dependencies": {
+        "json-schema": "^0.2.3",
+        "request": "^2.81.0",
+        "vscode-css-languageservice": "^2.0.3",
+        "vscode-languageserver-types": "^3.2.0"
     }
 }
