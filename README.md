@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # XiaoBao FrontEnd Extension 
 
 > 本插件还处于测试阶段，还存在许多bug。如果遇到问题欢迎issue or PR.
@@ -15,3 +16,10 @@
 这个想法主要来自于日常开发时候对于他人编写的组件模块的不熟悉，总是频繁的在多个文件之中切换。本次只是初版，只是提供了对组件的属性提示，并且会显示bindings上备注的信息，方便了解各个属性的功能和用法，也可以直观的了解到哪些是非必要属性，接下来会再考虑更深入的添加些更加便利的功能。
 
 
+=======
+# calculateChineseNumber README
+
+Display Chinese characters' number in the markdown
+
+**Enjoy!**
+>>>>>>> 39c84286b860f27fe730e6fc5e364b29eea9005f
