@@ -1,65 +1,17 @@
-# myextension README
+# XiaoBao FrontEnd Extension 
 
-This is the README for your extension "myextension". After writing up a brief description, we recommend including the following sections.
+> 本插件还处于测试阶段，还存在许多bug。如果遇到问题欢迎issue or PR.
 
-## Features
+## 功能点
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+1. MarkDown 汉字统计
 
-For example if there is an image subfolder under your extension project workspace:
+当初做这个功能只是为了了解下大概的`vsc`插件编写方案。官方的教程是计算英文字符数，稍加点自己的逻辑，就实现了统计中文字数。并且可以方便每次自己写完md文件，清楚的知道大概码了多少汉字。
 
-\!\[feature X\]\(images/feature-x.png\)
+2. 基于SIS前端文件架构的`component`属性提示。
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+于`2017年11月10日`添加了此功能，这个功能保留在我的ToDoList里很久了，一直没有时间去研究。
 
-## Requirements
+这个想法主要来自于日常开发时候对于他人编写的组件模块的不熟悉，总是频繁的在多个文件之中切换。本次只是初版，只是提供了对组件的属性提示，并且会显示bindings上备注的信息，方便了解各个属性的功能和用法，也可以直观的了解到哪些是非必要属性，接下来会再考虑更深入的添加些更加便利的功能。
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
 
-## Extension Settings
-
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
-
-For example:
-
-This extension contributes the following settings:
-
-* `myExtension.enable`: enable/disable this extension
-* `myExtension.thing`: set to `blah` to do something
-
-## Known Issues
-
-Calling out known issues can help limit users opening duplicate issues against your extension.
-
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
------------------------------------------------------------------------------------------------------------
-
-## Working with Markdown
-
-**Note:** You can author your README using Visual Studio Code.  Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on OSX or `Ctrl+\` on Windows and Linux)
-* Toggle preview (`Shift+CMD+V` on OSX or `Shift+Ctrl+V` on Windows and Linux)
-* Press `Ctrl+Space` (Windows, Linux) or `Cmd+Space` (OSX) to see a list of Markdown snippets
-
-### For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
