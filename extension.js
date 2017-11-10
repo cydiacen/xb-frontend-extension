@@ -28,13 +28,13 @@ class ClassServer {
     provideCompletionItems(document, position, token) {
         let start = new vsc.Position(0, 0);
         let range = new vsc.Range(start, position);
-        let text = document.getText(range),
-            tag = regex[1].exec(text),
+        let text = document.getText(range);
+        let tag = /<([^>^/]*)$/g.exec(text),
             arr;
         if (tag) {
             let _path = path.resolve(document.uri.fsPath, '../index.js'),
                 indexJs = fs.readFileSync(_path, 'utf8'),
-                tagName = string2Array(tag[1].trim())[0];
+                tagName = string2Array(tag[1].trim())[0].trim();
             if (tagName) {
                 let tagDir = path.join(document.uri.fsPath, '../..', tagName + '/index.js');
                 arr = parseBindings(tagDir);
