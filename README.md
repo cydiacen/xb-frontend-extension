@@ -6,7 +6,7 @@
 
 GitHub:[https://github.com/cydiacen/xb-frontend-extension](https://github.com/cydiacen/xb-frontend-extension)
 
-插件下载：
+插件下载：[https://marketplace.visualstudio.com/items?itemName=cydiacen.xb-one-enough](https://marketplace.visualstudio.com/items?itemName=cydiacen.xb-one-enough)
 
 ## 安装方法
 在vscode中 使用快捷键 `Ctrl+P`，然后输入命令：
