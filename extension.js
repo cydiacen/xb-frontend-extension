@@ -2,7 +2,6 @@
 Object.defineProperty(exports, "__esModule", {
     value: true
 });
-// (c) 2016-2017 Ecmel Ercan
 const vsc = require("vscode");
 var {window, commands, Disposable, ExtensionContext, StatusBarAlignment, StatusBarItem, TextDocument} = require('vscode');
 const lst = require("vscode-languageserver-types");
@@ -26,7 +25,7 @@ class ClassServer {
         ];
     }
     provideCompletionItems(document, position, token) {
-        let start = new vsc.Position(0, 0);
+        let start =new vsc.Position(0, 0);
         let range = new vsc.Range(start, position);
         let text = document.getText(range);
         let tag = /<([^>^/]*)$/g.exec(text),
@@ -34,7 +33,7 @@ class ClassServer {
         if (tag) {
             let _path = path.resolve(document.uri.fsPath, '../index.js'),
                 indexJs = fs.readFileSync(_path, 'utf8'),
-                tagName = string2Array(tag[1].trim())[0].trim();
+                tagName = string2Array(tag[1].trim())[0].trim().split(' ')[0];
             if (tagName) {
                 let tagDir = path.join(document.uri.fsPath, '../..', tagName + '/index.js');
                 arr = parseBindings(tagDir);
@@ -84,9 +83,13 @@ function parseBindings(url) {
             vsc.window.showWarningMessage('当前目录缺少index.js');
             return;
         } else {
-            let bindingsString = data.match(regex[0])[0];
+            let bindingsString =  data.replace(/\/\*(.|\r|\n)+\*\//g,'/*');
+            bindingsString = bindingsString.match(regex[0])[0];
+            // bindingsString = bindingsString.match(regex[0])[0];
             if (bindingsString) {
-                bindingsString.split('{')[1].trim().match(/(\w+):[^\n]*/g)
+                let bindingArr = bindingsString.split('{');
+                bindingArr = bindingArr.slice(1,bindingArr.length);bindingArr = bindingArr.join('').trim();
+                bindingArr.match(/(\w+):[^\n]*/g)
                     // string2Array(bindingsString.split('{')[1].trim())
                     .map(item => {
                         let field = new vsc.CompletionItem('-' + item.split(':')[0].trim(), item.split(':')[1].indexOf('?') > -1 ? vsc.CompletionItemKind.Module : vsc.CompletionItemKind.Constructor);
@@ -94,7 +97,7 @@ function parseBindings(url) {
                         if (item.indexOf('//') > -1) {
                             field.documentation = item.split('//')[1].trim();
                         } else if (item.indexOf('/*') > -1) {
-                            field.documentation = bindingsString.split(item)[1].split('*/')[0];
+                            field.documentation = data.split(item)[1].split('*/')[0].trim();
                         }
                         bindings.push(field);
                     })
@@ -256,4 +259,3 @@ class WordCounterController {
         this._wordCounter.updateWordCount();
     }
 }
-//# sourceMappingURL=extension.js.map

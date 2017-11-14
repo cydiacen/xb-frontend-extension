@@ -1,11 +1,11 @@
 {
   "name": "xb-one-enough",
-  "displayName": "xb-one-enough",
+  "displayName": "XiaoBao One Enough",
   "description": "just for xiaobao online frontend developer",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "cydiacen",
   "engines": {
-    "vscode": "^1.5.0"
+    "vscode": "^1.12.0"
   },
   "categories": [
     "Other"
@@ -14,6 +14,11 @@
     "onLanguage:markdown",
     "onLanguage:html"
   ],
+  "icon": "icon.jpg",
+  "galleryBanner": {
+    "color": "#241816",
+    "theme": "dark"
+},
   "main": "./extension",
   "contributes": {},
   "scripts": {
