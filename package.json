@@ -2,10 +2,10 @@
   "name": "xb-one-enough",
   "displayName": "XiaoBao One Enough",
   "description": "just for xiaobao online frontend developer",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "publisher": "cydiacen",
   "engines": {
-    "vscode": "^1.12.0"
+    "vscode": "^1.8.0"
   },
   "categories": [
     "Other"
@@ -18,7 +18,7 @@
   "galleryBanner": {
     "color": "#241816",
     "theme": "dark"
-},
+  },
   "main": "./extension",
   "contributes": {},
   "scripts": {
@@ -38,8 +38,16 @@
     "vscode": "^1.0.0"
   },
   "dependencies": {
+    "assert-plus": "^1.0.0",
+    "boom": "^7.1.1",
+    "cryptiles": "^4.1.1",
     "json-schema": "^0.2.3",
+    "jsprim": "^2.0.0",
+    "mime-db": "^1.31.0",
     "request": "^2.83.0",
+    "sntp": "^3.0.1",
+    "sshpk": "^1.13.1",
+    "vscode": "^1.1.6",
     "vscode-css-languageservice": "^2.1.11",
     "vscode-languageserver-types": "^3.5.0"
   }

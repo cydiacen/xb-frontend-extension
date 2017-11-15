@@ -3,20 +3,21 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 const vsc = require("vscode");
-var {window, commands, Disposable, ExtensionContext, StatusBarAlignment, StatusBarItem, TextDocument} = require('vscode');
-const lst = require("vscode-languageserver-types");
-const css = require("vscode-css-languageservice");
+var {
+    window,
+    commands,
+    Disposable,
+    ExtensionContext,
+    StatusBarAlignment,
+    StatusBarItem,
+    TextDocument
+} = require('vscode');
 const fs = require("fs");
 const path = require("path");
-const request = require('request');
-let service = css.getCSSLanguageService();
-let map = {};
 let regex = [
     /(bindings)\s*:\s*{([^}]*)/g, //匹配bindings
     /<([^>^/]*)$/g, //匹配标签名称
 ];
-let dot = vsc.CompletionItemKind.Class;
-let hash = vsc.CompletionItemKind.Reference;
 class ClassServer {
     constructor() {
         this.regex = [
@@ -25,7 +26,7 @@ class ClassServer {
         ];
     }
     provideCompletionItems(document, position, token) {
-        let start =new vsc.Position(0, 0);
+        let start = new vsc.Position(0, 0);
         let range = new vsc.Range(start, position);
         let text = document.getText(range);
         let tag = /<([^>^/]*)$/g.exec(text),
@@ -45,36 +46,6 @@ class ClassServer {
         return null;
     }
 }
-
-function pushSymbols(key, symbols) {
-    let ci = [];
-    for (let i = 0; i < symbols.length; i++) {
-        if (symbols[i].kind !== 5) {
-            continue;
-        }
-        let symbol;
-        while (symbol = regex.exec(symbols[i].name)) {
-            let item = new vsc.CompletionItem(symbol[1]);
-            item.kind = symbol[0].startsWith('.') ? dot : hash;
-            item.detail = path.basename(key);
-            ci.push(item);
-        }
-    }
-    map[key] = ci;
-}
-
-function parse(uri) {
-    fs.readFile(uri.fsPath, 'utf8', function (err, data) {
-        if (err) {
-            delete map[uri.fsPath];
-        } else {
-            let doc = lst.TextDocument.create(uri.fsPath, 'css', 1, data);
-            let symbols = service.findDocumentSymbols(doc, service.parseStylesheet(doc));
-            pushSymbols(uri.fsPath, symbols);
-        }
-    });
-}
-
 function parseBindings(url) {
     let bindings = [];
     try {
@@ -83,12 +54,13 @@ function parseBindings(url) {
             vsc.window.showWarningMessage('当前目录缺少index.js');
             return;
         } else {
-            let bindingsString =  data.replace(/\/\*(.|\r|\n)+\*\//g,'/*');
+            let bindingsString = data.replace(/\/\*(.|\r|\n)+\*\//g, '/*');
             bindingsString = bindingsString.match(regex[0])[0];
             // bindingsString = bindingsString.match(regex[0])[0];
             if (bindingsString) {
                 let bindingArr = bindingsString.split('{');
-                bindingArr = bindingArr.slice(1,bindingArr.length);bindingArr = bindingArr.join('').trim();
+                bindingArr = bindingArr.slice(1, bindingArr.length);
+                bindingArr = bindingArr.join('').trim();
                 bindingArr.match(/(\w+):[^\n]*/g)
                     // string2Array(bindingsString.split('{')[1].trim())
                     .map(item => {
@@ -112,21 +84,6 @@ function parseBindings(url) {
 
 }
 
-function parseRemote(url) {
-    request(url, (err, response, body) => {
-        if (body.length > 0) {
-            let doc = lst.TextDocument.create(url, 'css', 1, body);
-            let symbols = service.findDocumentSymbols(doc, service.parseStylesheet(doc));
-            pushSymbols(url, symbols);
-        }
-    });
-}
-
-function parseRemoteConfig() {
-    let remoteCssConfig = vsc.workspace.getConfiguration('css');
-    let urls = remoteCssConfig.get('remoteStyleSheets', []);
-    urls.forEach((url) => parseRemote(url));
-}
 
 function string2Array(str) {
     let arr = str.split('\r\n');
@@ -137,47 +94,23 @@ function string2Array(str) {
 }
 
 function activate(context) {
-    if (vsc.workspace.rootPath) {
-        const remoteCssConfig = vsc.workspace.getConfiguration('html');
-        const extensions = remoteCssConfig.get('fileExtensions', []);
-        extensions.forEach(ext => {
-            const glob = `**/*.${ext}`;
-            vsc.workspace.findFiles(glob, '').then(function (uris) {
-                for (let i = 0; i < uris.length; i++) {
-                    parse(uris[i]);
-                }
-            });
-            let watcher = vsc.workspace.createFileSystemWatcher(glob);
-            watcher.onDidCreate(function (uri) {
-                parse(uri);
-            });
-            watcher.onDidChange(function (uri) {
-                parse(uri);
-            });
-            watcher.onDidDelete(function (uri) {
-                delete map[uri.fsPath];
-            });
-            context.subscriptions.push(watcher);
-        });
-        parseRemoteConfig();
-        // The command has been defined in the package.json file
-        // Now provide the implementation of the command with  registerCommand
-        // The commandId parameter must match the command field in package.json
-        let wordCounter = new WordCount();
-        let controller = new WordCounterController(wordCounter);
-        // var disposable = commands.registerCommand('extension.sayHello', () => {
-        //     wordCounter.updateWordCount();
-        // });
+    vsc.window.showWarningMessage('欢迎使用One Enough！')
+    // The command has been defined in the package.json file
+    // Now provide the implementation of the command with  registerCommand
+    // The commandId parameter must match the command field in package.json
+    let wordCounter = new WordCount();
+    let controller = new WordCounterController(wordCounter);
+    // var disposable = commands.registerCommand('extension.sayHello', () => {
+    //     wordCounter.updateWordCount();
+    // });
 
-        // Add to a list of disposables which are disposed when this extension is deactivated.
-        context.subscriptions.push(controller);
-        context.subscriptions.push(wordCounter);
-    };
+    // Add to a list of disposables which are disposed when this extension is deactivated.
+    context.subscriptions.push(controller);
+    context.subscriptions.push(wordCounter);
     let classServer = new ClassServer();
     context.subscriptions.push(vsc.languages.registerCompletionItemProvider([
         'html',
     ], classServer));
-    context.subscriptions.push(vsc.workspace.onDidChangeConfiguration((e) => parseRemoteConfig()));
 }
 exports.activate = activate;
 

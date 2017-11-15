@@ -27,7 +27,7 @@ GitHub:[https://github.com/cydiacen/xb-frontend-extension](https://github.com/cy
 
 使用方法：
 
-在需要显示只能提示的组件行内，使用快捷键`Ctrl+Space`,出现的以`-`为开头的提示，就是组件所定义的属性。
+在需要显示智能提示的组件行内,,出现的以`-`为开头的提示，就是组件所定义的属性。
 
 
 
