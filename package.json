@@ -2,7 +2,7 @@
   "name": "xb-one-enough",
   "displayName": "XiaoBao One Enough",
   "description": "just for xiaobao online frontend developer",
-  "version": "0.0.4",
+  "version": "0.0.7",
   "publisher": "cydiacen",
   "engines": {
     "vscode": "^1.8.0"
@@ -12,7 +12,8 @@
   ],
   "activationEvents": [
     "onLanguage:markdown",
-    "onLanguage:html"
+    "onLanguage:html",
+    "onLanguage:javascript"
   ],
   "icon": "icon.jpg",
   "galleryBanner": {
@@ -20,7 +21,15 @@
     "theme": "dark"
   },
   "main": "./extension",
-  "contributes": {},
+  "contributes": {
+    "commands": [
+      {
+        "command": "extension.scaningFile",
+        "title": "检索当前文件可能需要双语的文案",
+        "category": "sis"
+      }
+    ]
+  },
   "scripts": {
     "postinstall": "node ./node_modules/vscode/bin/install",
     "test": "node ./node_modules/vscode/bin/test"

@@ -10,7 +10,8 @@ var {
     ExtensionContext,
     StatusBarAlignment,
     StatusBarItem,
-    TextDocument
+    TextDocument,
+    TextEditorEdit,
 } = require('vscode');
 const fs = require("fs");
 const path = require("path");
@@ -18,6 +19,7 @@ let regex = [
     /(bindings)\s*:\s*{([^}]*)/g, //匹配bindings
     /<([^>^/]*)$/g, //匹配标签名称
 ];
+var endWithSpace; //文本是否以空格结尾
 class ClassServer {
     constructor() {
         this.regex = [
@@ -26,11 +28,13 @@ class ClassServer {
         ];
     }
     provideCompletionItems(document, position, token) {
+        if (window.activeTextEditor.document.languageId !== 'html') return;
         let start = new vsc.Position(0, 0);
         let range = new vsc.Range(start, position);
         let text = document.getText(range);
         let tag = /<([^>^/]*)$/g.exec(text),
             arr;
+        endWithSpace = text.substring(text.length - 1, 0).endsWith(' ') || text.endsWith(' ')
         if (tag) {
             let _path = path.resolve(document.uri.fsPath, '../index.js'),
                 indexJs = fs.readFileSync(_path, 'utf8'),
@@ -46,26 +50,29 @@ class ClassServer {
         return null;
     }
 }
+
 function parseBindings(url) {
     let bindings = [];
     try {
-        let data = fs.readFileSync(url.replace('.html', '.js'), 'utf8');
+        url = url.replace('.html', '.js');
+        if (!fs.existsSync(url)) return;
+        let data = fs.readFileSync(url, 'utf8');
         if (!data) {
             vsc.window.showWarningMessage('当前目录缺少index.js');
             return;
         } else {
             let bindingsString = data.replace(/\/\*(.|\r|\n)+\*\//g, '/*');
-            bindingsString = bindingsString.match(regex[0])[0];
+            bindingsString = getTextObjectValue(bindingsString, 'bindings');
             // bindingsString = bindingsString.match(regex[0])[0];
             if (bindingsString) {
                 let bindingArr = bindingsString.split('{');
                 bindingArr = bindingArr.slice(1, bindingArr.length);
                 bindingArr = bindingArr.join('').trim();
-                bindingArr.match(/(\w+):[^\n]*/g)
+                bindingsString.match(/(\w+):[^\n]*/g)
                     // string2Array(bindingsString.split('{')[1].trim())
                     .map(item => {
                         let field = new vsc.CompletionItem('-' + item.split(':')[0].trim(), item.split(':')[1].indexOf('?') > -1 ? vsc.CompletionItemKind.Module : vsc.CompletionItemKind.Constructor);
-                        field.insertText = item.split(':')[0].trim().replace(/([A-Z])/g, "-$1").toLowerCase() + '=""';
+                        field.insertText = (endWithSpace ? '' : ' ') + item.split(':')[0].trim().replace(/([A-Z])/g, "-$1").toLowerCase() + '=""';
                         if (item.indexOf('//') > -1) {
                             field.documentation = item.split('//')[1].trim();
                         } else if (item.indexOf('/*') > -1) {
@@ -79,11 +86,26 @@ function parseBindings(url) {
         }
     } catch (error) {
         console.log(error);
-        vsc.window.showErrorMessage('parseBinding出错');
+        // vsc.window.showErrorMessage('parseBinding出错');
     }
 
 }
-
+//获取字符串中某个key的值
+function getTextObjectValue(context, key) {
+    let res = '',
+        count = 1,
+        reg = new Function(`return /(${key})\\s*:\\s*{(.|\\r|\\n)*/g`)();
+    context = context.match(reg)[0];
+    for (let i = 0; i < context.length; i++) {
+        if (i > context.indexOf('{')) {
+            if (context[i] == '{') count++;
+            if (context[i] == '}') count--;
+            if (count == 0) break;
+            res += context[i];
+        }
+    }
+    return res;
+}
 
 function string2Array(str) {
     let arr = str.split('\r\n');
@@ -93,13 +115,167 @@ function string2Array(str) {
     return arr;
 }
 
+const temp = `let $lang = {
+}
+export default $lang`
+
+var set, warningArr;
+function translateKeyValue(data, value) {
+    let json = data.match(/\{(.|\n|\r\n)*\}/g)[0];
+    json = json.slice(1, json.length - 1);
+    let valueArr = value.map(i => i.label.trim());
+    //生成中文语言包
+    let objArr = json.replace(/\r\n/g, '\n').split('\n');
+
+    objArr.forEach(item => {
+        valueArr.forEach((v, i) => {
+            if (item.includes(v)) {
+                set.add(i);
+            }
+        })
+    })
+    valueArr.forEach((v, i) => {
+        if (![...set].includes(i)) {
+            objArr.push(`    ${v}:${v},`);
+        } else {
+            warningArr.push(v);
+        }
+    })
+
+    return objArr;
+}
+function modifyFile(_path, value) {
+    return new Promise((solve, reject) => {
+        set = new Set();
+        warningArr = [];
+        let isExists = fs.existsSync(_path);
+        if (isExists) {
+            var rOption = {
+                flags: 'r',
+                encoding: 'utf8',
+                mode: 666
+            }
+            var fileReadStream = fs.createReadStream(_path, rOption);
+            // var fileWriteStream = fs.createWriteStream(path.join(_path, '../lang.cn.js'), wOption);
+            fileReadStream.on('data', function (data) {
+                // let json =JSON.parse(data.match(/{[^}]*}/g)[0]);
+                fs.writeFile(_path, data.replace(/\{(.|\n)*\}/g, "{\r\n" + translateKeyValue(data, value).filter(i => i).join('\r\n') + "\r\n}"), (err) => {
+                    if (err) throw err;
+                });
+                solve();
+            });
+        } else {
+            fs.writeFile(_path, temp.replace(/\{(.|\n)*\}/g, "{\r\n" + translateKeyValue(temp, value).filter(i => i).join('\r\n') + "\r\n}"), (err) => {
+                if (err) throw err;
+            })
+            solve();
+        }
+    })
+
+
+}
+function translateLangFile(file, value) {
+    Promise.all([modifyFile(path.join(file.path, '../lang.cn.js'), value),
+    modifyFile(path.join(file.path, '../lang.en.js'), value)
+    ]).then(() => {
+        if (warningArr.length) {
+            window.showWarningMessage('语言包内容已存在:\r\n' + [...new Set(warningArr)].join(','));
+        }
+    })
+
+}
+
 function activate(context) {
-    vsc.window.showWarningMessage('欢迎使用One Enough！')
+    // vsc.window.showInformationMessage('欢迎使用One Enough！')
     // The command has been defined in the package.json file
     // Now provide the implementation of the command with  registerCommand
     // The commandId parameter must match the command field in package.json
     let wordCounter = new WordCount();
     let controller = new WordCounterController(wordCounter);
+    //TODO:123
+    commands.registerCommand('extension.scaningFile', () => {
+        // window.showInformationMessage('extension.scaningDic!');
+        var items = [];
+        let activeEditor = window.activeTextEditor;
+        if (!activeEditor || !activeEditor.document) {
+            return;
+        }
+        var text = activeEditor.document.getText();
+        var match, reg;
+        if (activeEditor.document.languageId == 'html') {
+            reg = /([\u4e00-\u9fa5]+)/g
+        } else if (activeEditor.document.languageId == 'javascript') {
+            reg = /([\'\"].*[\u4e00-\u9fa5]+.*[\'\"])/g
+        } else {
+            window.showErrorMessage('请在js文件或者html文件下执行此命令!');
+            return;
+        }
+        while (match = reg.exec(text)) {
+            //包含$lang的文案不操作
+            if (match[0].includes('$lang')) continue;
+            var startPos = activeEditor.document.positionAt(match.index);
+            var endPos = activeEditor.document.positionAt(match.index + match[0].length);
+            let reg = new RegExp(`(\\$)*lang\\[(\\'|\\")*${match[0]}(\\'|\\")*\\]`, 'g')
+            let lineText = window.activeTextEditor.document.lineAt(startPos.line).text;
+            if (reg.test(lineText)) continue;
+            if (lineText.trim().startsWith('//') || lineText.trim().startsWith('<!--')) continue;
+            items.push({
+                label: match[0].trim(),
+                description: window.activeTextEditor.document.lineAt(startPos.line).text.trim(),
+                range: new vsc.Range(startPos, endPos)
+            })
+        }
+        if (items.length) {
+            window.showQuickPick(items, {
+                onDidSelectItem: (value) => {
+                    window.activeTextEditor.revealRange(value.range, 1);
+                    let pos = new vsc.Position(value.range.start.line, value.range.end.character);
+                    let moveNum = value.range.start.line - window.activeTextEditor.selection.anchor.line;
+                    vsc.commands.executeCommand('cursorMove', { to: 'down', value: moveNum, by: 'line' })
+                }, placeHolder: '选择需要转换的文案 可用方向键+空格选择', canPickMany: true, ignoreFocusOut: true
+            }).then(function (value) {
+                if (value) {
+                    let pickItem = [{
+                        label: 'this.$lang'
+                    }, {
+                        label: '$lang'
+                    }, {
+                        label: '$scope.$lang'
+                    }, {
+                        label: '$ctrl.$lang'
+                    }]
+                    window.showQuickPick(pickItem).then(langType => {
+                        window.activeTextEditor.edit(edit => {
+                            value.forEach(item => {
+                                let isHtml = activeEditor.document.languageId == 'html';
+                                let placeText = langType.label + `[${isHtml ? `"${item.label}"` : item.label}]`;
+                                edit.replace(item.range, isHtml ? `{{${placeText}}}` : placeText);
+                            })
+                        })
+                        translateLangFile(activeEditor.document.uri, value)
+                    })
+
+                }
+                console.log(33, value);
+            }).catch(err => {
+                console.log(err);
+            });
+        } else {
+            window.showErrorMessage('Sorry!当前没有需要翻译的文案!')
+        }
+
+        // window.showTextDocument(window.activeTextEditor.document,)
+
+    })
+    // commands.registerCommand('extension.replaceFeild', () => {
+    //     // window.showInformationMessage('extension.scaningDic!');
+    //     let selection = window.activeTextEditor.selection;
+    //     window.activeTextEditor.edit(edit => {
+    //         edit.replace(selection, '123');
+    //     })
+    //     // window.showTextDocument(window.activeTextEditor.document,)
+
+    // })
     // var disposable = commands.registerCommand('extension.sayHello', () => {
     //     wordCounter.updateWordCount();
     // });
@@ -114,7 +290,7 @@ function activate(context) {
 }
 exports.activate = activate;
 
-function deactivate() {}
+function deactivate() { }
 exports.deactivate = deactivate;
 class WordCount {
     constructor() {
