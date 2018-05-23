@@ -120,6 +120,7 @@ const temp = `let $lang = {
 export default $lang`
 
 var set, warningArr;
+
 function translateKeyValue(data, value) {
     let json = data.match(/\{(.|\n|\r\n)*\}/g)[0];
     json = json.slice(1, json.length - 1);
@@ -144,6 +145,7 @@ function translateKeyValue(data, value) {
 
     return objArr;
 }
+
 function modifyFile(_path, value) {
     return new Promise((solve, reject) => {
         set = new Set();
@@ -159,14 +161,17 @@ function modifyFile(_path, value) {
             // var fileWriteStream = fs.createWriteStream(path.join(_path, '../lang.cn.js'), wOption);
             fileReadStream.on('data', function (data) {
                 // let json =JSON.parse(data.match(/{[^}]*}/g)[0]);
-                fs.writeFile(_path, data.replace(/\{(.|\n)*\}/g, "{\r\n" + translateKeyValue(data, value).filter(i => i).join('\r\n') + "\r\n}"), (err) => {
+                fs.writeFile(_path, data.replace(/\{(.|\n|\r\n)*\}/g, "{\r\n" + translateKeyValue(data, value).filter(i => i).join('\r\n') + "\r\n}"), (err) => {
                     if (err) throw err;
                 });
                 solve();
             });
         } else {
-            fs.writeFile(_path, temp.replace(/\{(.|\n)*\}/g, "{\r\n" + translateKeyValue(temp, value).filter(i => i).join('\r\n') + "\r\n}"), (err) => {
-                if (err) throw err;
+            fs.writeFile(_path, temp.replace(/\{(.|\n|\r\n)*\}/g, "{\r\n" + translateKeyValue(temp, value).filter(i => i).join('\r\n') + "\r\n}"), (err) => {
+                if (err) {
+                    console.log(err);
+                    throw err
+                };
             })
             solve();
         }
@@ -174,9 +179,10 @@ function modifyFile(_path, value) {
 
 
 }
+
 function translateLangFile(file, value) {
-    Promise.all([modifyFile(path.join(file.path, '../lang.cn.js'), value),
-    modifyFile(path.join(file.path, '../lang.en.js'), value)
+    Promise.all([modifyFile(path.join(file.path.slice(1), '../lang.cn.js'), value),
+    modifyFile(path.join(file.path.slice(1), '../lang.en.js'), value)
     ]).then(() => {
         if (warningArr.length) {
             window.showWarningMessage('语言包内容已存在:\r\n' + [...new Set(warningArr)].join(','));
@@ -231,8 +237,15 @@ function activate(context) {
                     window.activeTextEditor.revealRange(value.range, 1);
                     let pos = new vsc.Position(value.range.start.line, value.range.end.character);
                     let moveNum = value.range.start.line - window.activeTextEditor.selection.anchor.line;
-                    vsc.commands.executeCommand('cursorMove', { to: 'down', value: moveNum, by: 'line' })
-                }, placeHolder: '选择需要转换的文案 可用方向键+空格选择', canPickMany: true, ignoreFocusOut: true
+                    vsc.commands.executeCommand('cursorMove', {
+                        to: 'down',
+                        value: moveNum,
+                        by: 'line'
+                    })
+                },
+                placeHolder: '选择需要转换的文案 可用方向键+空格选择',
+                canPickMany: true,
+                ignoreFocusOut: true
             }).then(function (value) {
                 if (value) {
                     let pickItem = [{
