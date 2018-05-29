@@ -1,0 +1,8 @@
+
+    "所以":"所以",
+	needNameTip: "请输入用户名！",
+	needPasswordTip: "请输入密码！",
+	noSuchNameTip: "用户名不存在！",
+	wrongPasswordTip: "您输入的密码有误，请重新输入！",
+	noAuthorityTip: "无权限账号，请联系系统管理员！",
+	needNameAndPasswordTip: "请输入用户名和密码！"

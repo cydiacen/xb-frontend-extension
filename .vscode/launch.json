@@ -3,6 +3,18 @@
     "version": "0.1.0",
     "configurations": [
         {
+            "type": "extensionHost",
+            "request": "launch",
+            "name": "启动扩展",
+            "runtimeExecutable": "${execPath}",
+            "args": [
+                "--extensionDevelopmentPath=${workspaceFolder}"
+            ],
+            "outFiles": [
+                "${workspaceFolder}/out/**/*.js"
+            ],
+        },
+        {
             "name": "Launch Extension",
             "type": "extensionHost",
             "request": "launch",
@@ -10,7 +22,7 @@
             "args": [
                 "--extensionDevelopmentPath=${workspaceRoot}"
             ],
-            "stopOnEntry": true
+            "stopOnEntry": false
         },
         {
             "name": "Launch Tests",

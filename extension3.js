@@ -1,6 +1,6 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
-var {window, commands, Disposable, ExtensionContext, StatusBarAlignment, StatusBarItem, TextDocument} = require('vscode');
+var { window, commands, Disposable, ExtensionContext, StatusBarAlignment, StatusBarItem, TextDocument } = require('vscode');
 
 // this method is called when your extension is activated
 // your extension is activated the very first time the command is executed
@@ -31,10 +31,10 @@ function deactivate() {
 }
 exports.deactivate = deactivate;
 class WordCount {
-    constructor(){
+    constructor() {
         this._statusBarItem = StatusBarItem;
     }
-    updateWordCount(){
+    updateWordCount() {
         // Create as needed
         if (!this._statusBarItem) {
             this._statusBarItem = window.createStatusBarItem(StatusBarAlignment.Left);
@@ -55,11 +55,11 @@ class WordCount {
             // Update the status bar
             this._statusBarItem.text = wordCount !== 1 ? `$(hubot)  大佬，您已码了${wordCount}个汉字` : '$(hubot)  切，就打一个字。。你是要干嘛？';
             this._statusBarItem.show();
-        } else { 
+        } else {
             this._statusBarItem.hide();
         }
     }
-    _getWordCount(doc){
+    _getWordCount(doc) {
         let docContent = doc.getText();
 
         // Parse out unwanted whitespace so the split is accurate
@@ -68,7 +68,7 @@ class WordCount {
         let wordCount = 0;
         if (docContent != "") {
             let reg = /[\u4e00-\u9fa5]/g;
-            if(docContent.toString().match(reg)){
+            if (docContent.toString().match(reg)) {
                 wordCount = docContent.toString().match(reg).length
             }
             // wordCount = docContent.split(" ").length;
