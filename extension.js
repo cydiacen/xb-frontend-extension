@@ -15,6 +15,7 @@ var {
 } = require('vscode');
 const fs = require("fs");
 const path = require("path");
+const os = require("os");
 const scaningFile = require("./translate");
 let regex = [
     /(bindings)\s*:\s*{([^}]*)/g, //匹配bindings
@@ -115,7 +116,7 @@ function string2Array(str) {
     }
     return arr;
 }
-
+const nodeDependencies_1 = require("./xbView");
 function activate(context) {
     // vsc.window.showInformationMessage('欢迎使用One Enough！')
     // The command has been defined in the package.json file
@@ -130,6 +131,32 @@ function activate(context) {
         // window.showTextDocument(window.activeTextEditor.document,)
 
     })
+    const nodeDependenciesProvider = new nodeDependencies_1.DepNodeProvider(vsc.workspace.rootPath);
+    vsc.window.registerTreeDataProvider('xbView', nodeDependenciesProvider);
+    vsc.commands.registerCommand('nodeDependencies.refreshEntry', () => nodeDependenciesProvider.refresh());
+    vsc.commands.registerCommand('extension.openPackageOnNpm', moduleName => vsc.commands.executeCommand('vscode.open', vsc.Uri.parse(`https://www.npmjs.com/package/${moduleName}`)));
+    vsc.commands.registerCommand('extension.runScript', module => {
+        let runText = "";
+        if (module.nodes) {
+            let scripts = module.nodes.map(i => i.script);
+            // if (os.platform().includes('darwin')) {
+            //     runText = scripts.join(' && ');
+            // } else {
+            runText = scripts.join(' ; ');
+            // }
+        } else {
+            runText = module.command.arguments[0].script;
+        }
+        let ter = vsc.window.createTerminal(module.title || module.label);
+        ter.show();
+        ter.sendText(runText);
+    });
+    vsc.commands.registerCommand('nodeDependencies.addEntry', () => vsc.window.showInformationMessage(`Successfully called add entry.`));
+    vsc.commands.registerCommand('nodeDependencies.editEntry', (node) => {
+        vsc.commands.executeCommand('vscode.openFolder', vsc.Uri.parse(path.join(vsc.workspace.rootPath, 'node_modules', node.label)), true)
+    });
+    vsc.commands.registerCommand('nodeDependencies.deleteEntry', (node) => vsc.window.showInformationMessage(`Successfully called delete entry on ${node.label}.`));
+
     // commands.registerCommand('extension.replaceFeild', () => {
     //     // window.showInformationMessage('extension.scaningDic!');
     //     let selection = window.activeTextEditor.selection;
