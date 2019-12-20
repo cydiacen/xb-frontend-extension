@@ -2,7 +2,7 @@
   "name": "xb-one-enough",
   "displayName": "XiaoBao One Enough",
   "description": "just for xiaobao online frontend developer",
-  "version": "0.0.10",
+  "version": "0.0.12",
   "publisher": "cydiacen",
   "engines": {
     "vscode": "^1.8.0"
@@ -19,6 +19,7 @@
     "onLanguage:html",
     "onLanguage:vue",
     "onLanguage:typescript",
+    "onLanguage:json",
     "onLanguage:javascript"
   ],
   "icon": "icon.jpg",

@@ -15,7 +15,6 @@ class DepNodeProvider {
 		this.onDidChangeTreeData = this._onDidChangeTreeData.event;
 	}
 	refresh() {
-		debugger
 		this._onDidChangeTreeData.fire();
 	}
 	getTreeItem(element) {
@@ -79,7 +78,7 @@ class DepNodeProvider {
 		else {
 			//这里是首次加载
 			let arr = [];
-			arr.push(new Dependency('脚本列表', '生成api,枚举,组件', vscode.TreeItemCollapsibleState.Collapsed, ChildrenType.root));
+			arr.push(new Dependency('脚本列表', '根据.vscode/settings.json "xbView.scriptMenu"设置 生成脚本树', vscode.TreeItemCollapsibleState.Collapsed, ChildrenType.root));
 			arr.push(new Dependency('npm依赖树', '查看npm依赖树', vscode.TreeItemCollapsibleState.Collapsed, ChildrenType.root));
 			return Promise.resolve(arr);
 
