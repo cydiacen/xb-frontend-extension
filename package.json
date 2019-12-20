@@ -2,17 +2,24 @@
   "name": "xb-one-enough",
   "displayName": "XiaoBao One Enough",
   "description": "just for xiaobao online frontend developer",
-  "version": "0.0.8",
+  "version": "0.0.12",
   "publisher": "cydiacen",
   "engines": {
     "vscode": "^1.8.0"
+  },
+  "repository": {
+    "url": "https://github.com/cydiacen/xb-frontend-extension"
   },
   "categories": [
     "Other"
   ],
   "activationEvents": [
+    "onView:nodeDependencies",
     "onLanguage:markdown",
     "onLanguage:html",
+    "onLanguage:vue",
+    "onLanguage:typescript",
+    "onLanguage:json",
     "onLanguage:javascript"
   ],
   "icon": "icon.jpg",
@@ -22,11 +29,133 @@
   },
   "main": "./extension",
   "contributes": {
+    "menus": {
+      "view/title": [
+        {
+          "command": "nodeDependencies.refreshEntry",
+          "when": "view == xbView",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "nodeDependencies.editEntry",
+          "when": "view == xbView && viewItem == dependency",
+          "group": "inline"
+        },
+        {
+          "command": "extension.runScript",
+          "when": "view == xbView && viewItem == script",
+          "group": "inline"
+        }
+      ]
+    },
     "commands": [
       {
         "command": "extension.scaningFile",
         "title": "检索当前文件可能需要双语的文案",
         "category": "sis"
+      },
+      {
+        "command": "extension.runScript",
+        "title": "执行命令行脚本",
+        "category": "sis"
+      },
+      {
+        "command": "nodeDependencies.refreshEntry",
+        "title": "Refresh",
+        "icon": {
+          "light": "resources/light/refresh.svg",
+          "dark": "resources/dark/refresh.svg"
+        }
+      },
+      {
+        "command": "nodeDependencies.addEntry",
+        "title": "Add"
+      },
+      {
+        "command": "nodeDependencies.editEntry",
+        "title": "Edit",
+        "icon": {
+          "light": "resources/light/edit.svg",
+          "dark": "resources/dark/edit.svg"
+        }
+      },
+      {
+        "command": "extension.runScript",
+        "title": "Run",
+        "icon": {
+          "light": "resources/light/refresh.svg",
+          "dark": "resources/dark/refresh.svg"
+        }
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "xb-one-enough",
+          "title": "SchoolPalPad",
+          "icon": "/media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "xb-one-enough": [
+        {
+          "id": "xbView",
+          "name": "School Pal Views"
+        }
+      ]
+    },
+    "configuration": [
+      {
+        "title": "脚本分类设置",
+        "properties": {
+          "xbView.scriptMenu": {
+            "type": "array",
+            "default": [
+              {
+                "title": "NetCore版",
+                "nodes": [
+                  {
+                    "title": "生成api",
+                    "script": "node tools/create-api-netcore.js"
+                  },
+                  {
+                    "title": "生成枚举",
+                    "script": "node tools/create-enum-netcore.js"
+                  }
+                ]
+              },
+              {
+                "title": "TypeScript版",
+                "nodes": [
+                  {
+                    "title": "生成api",
+                    "script": "node tools/create-typeAPI.js"
+                  },
+                  {
+                    "title": "生成枚举",
+                    "script": "node tools/create-enum-type.js"
+                  }
+                ]
+              },
+              {
+                "title": "JS版",
+                "nodes": [
+                  {
+                    "title": "生成api",
+                    "script": "node tools/create-api.js"
+                  },
+                  {
+                    "title": "生成枚举",
+                    "script": "node tools/create-enum.js"
+                  }
+                ]
+              }
+            ]
+          }
+        }
       }
     ]
   },
@@ -37,6 +166,7 @@
   "devDependencies": {
     "@types/mocha": "^2.2.32",
     "@types/node": "^6.0.40",
+    "@types/vscode": "^1.8.0",
     "ajv": "^5.3.0",
     "eslint": "^3.6.0",
     "har-validator": "^5.0.3",
@@ -56,7 +186,6 @@
     "request": "^2.83.0",
     "sntp": "^3.0.1",
     "sshpk": "^1.13.1",
-    "vscode": "^1.1.6",
     "vscode-css-languageservice": "^2.1.11",
     "vscode-languageserver-types": "^3.5.0"
   }
