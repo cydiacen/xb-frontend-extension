@@ -65,6 +65,27 @@ GitHub:[https://github.com/cydiacen/xb-frontend-extension](https://github.com/cy
 下面放张gif演示下具体功能
 ![gif](https://github.com/cydiacen/markdownImg/blob/master/XbView1.gif?raw=true)
 
+小更新点:
+支持命令行内置变量[$$version,$$ip] 用于根据不通环境执行传递不同参数----2020-03-26 20:44:53
+具体作用于setting.json中的配置项,如一键pull push不同remote:
+```json
+"xbView.scriptMenu": [
+		{
+			"title": "同步代码,远端:group",
+			"nodes": [
+				{
+					"title": "pull group",
+					"script": "git pull group $$version"
+				},
+				{
+					"title": "push origin",
+					"script": "git push origin $$version"
+				}
+			]
+		},
+	]
+```
+
 
 
 

@@ -14,12 +14,12 @@
     "Other"
   ],
   "activationEvents": [
+    "onLanguage:json",
     "onView:nodeDependencies",
     "onLanguage:markdown",
     "onLanguage:html",
     "onLanguage:vue",
     "onLanguage:typescript",
-    "onLanguage:json",
     "onLanguage:javascript"
   ],
   "icon": "icon.jpg",
@@ -180,6 +180,8 @@
     "assert-plus": "^1.0.0",
     "boom": "^7.1.1",
     "cryptiles": "^4.1.1",
+    "fix-path": "^3.0.0",
+    "iconv-lite": "^0.5.1",
     "json-schema": "^0.2.3",
     "jsprim": "^2.0.0",
     "mime-db": "^1.31.0",
