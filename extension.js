@@ -120,9 +120,6 @@ function string2Array(str) {
 // const gitExtension = vsc.scm.createSourceControl('git', 'Git')
 // const git = gitExtension.getAPI(1);
 // let { findGitPath } = require('./locator.js');
-const fixPath = require('fix-path');
-fixPath();
-console.log(process.env.PATH);
 let { findGitPath } = require('./locator.js')
 findGitPath().then(data => {
     let pro = require('child_process');

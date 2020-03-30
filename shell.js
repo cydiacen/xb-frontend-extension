@@ -1,6 +1,6 @@
 'use strict';
 var __assign = (this && this.__assign) || function () {
-    __assign = Object.assign || function(t) {
+    __assign = Object.assign || function (t) {
         for (var s, i = 1, n = arguments.length; i < n; i++) {
             s = arguments[i];
             for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
@@ -25,7 +25,7 @@ exports.__esModule = true;
 var child_process_1 = require("child_process");
 var fs = require("fs");
 var paths = require("path");
-var iconv = require("iconv-lite");
+// var iconv = require("iconv-lite");
 exports.isWindows = process.platform === 'win32';
 var slashesRegex = /[\\/]/;
 var ps1Regex = /\.ps1$/i;
@@ -133,7 +133,8 @@ function run(command, args, encoding, options) {
                 error.stdout =
                     encoding === 'utf8' || encoding === 'binary' || encoding === 'buffer'
                         ? stdout
-                        : iconv.decode(Buffer.from(stdout, 'binary'), encoding);
+                        : stdout
+                // : iconv.decode(Buffer.from(stdout, 'binary'), encoding);
                 reject(error);
                 return;
             }
@@ -142,7 +143,8 @@ function run(command, args, encoding, options) {
             // }
             resolve(encoding === 'utf8' || encoding === 'binary' || encoding === 'buffer'
                 ? stdout
-                : iconv.decode(Buffer.from(stdout, 'binary'), encoding));
+                : stdout);
+            // : iconv.decode(Buffer.from(stdout, 'binary'), encoding));
         });
         if (stdin) {
             proc.stdin.end(stdin, stdinEncoding || 'utf8');
