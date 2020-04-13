@@ -121,9 +121,9 @@ function string2Array(str) {
 // const git = gitExtension.getAPI(1);
 // let { findGitPath } = require('./locator.js');
 let { findGitPath } = require('./locator.js')
+let pro = require('child_process');
 findGitPath().then(data => {
-    let pro = require('child_process');
-    vsc.gitVersion = pro.execSync('cd ' + vsc.workspace.rootPath + ';' + data.path + ' rev-parse --abbrev-ref HEAD', { encoding: 'UTF-8' }).trim();;
+    vsc.gitPath = data.path;
 })
 
 // console.log(findGitPath());
@@ -131,7 +131,7 @@ findGitPath().then(data => {
 //脚本命令行快捷指令
 const keys = {
     $$version: () => {
-        return vsc.gitVersion;
+        return pro.execSync('cd ' + vsc.workspace.rootPath + ';' + vsc.gitPath + ' rev-parse --abbrev-ref HEAD', { encoding: 'UTF-8' }).trim();;
     },
     $$ip: () => {
         const os = require('os');
