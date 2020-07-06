@@ -5,7 +5,7 @@ Object.defineProperty(exports, "__esModule", {
     value: true
 });
 const vsc = require("vscode");
-var { window, commands, Disposable, ExtensionContext, StatusBarAlignment, StatusBarItem, TextDocument } = require('vscode');
+var { window, commands, Disposable, ExtensionContext, StatusBarAlignment, StatusBarItem, TextDocument, workspace } = require('vscode');
 
 const fs = require("fs");
 const path = require("path");
@@ -14,11 +14,61 @@ const temp = `let $lang = {
 export default $lang`
 
 var set, warningArr;
+let getter = {
+    get isNewSIS() {
+        return ['typescriptreact', 'vue', 'typescript'].includes(window.activeTextEditor.document.languageId);
+    },
+    langReg() {
+        return this.isNewSIS ? /\{(.|\n|\r\n)*?\}/g : /\{(.|\n|\r\n)*\}/g;
+    }
+}
+function translateKeyValueForNewSIS(data, value) {
 
+    let valueArr = value.map(i => i.label.trim());
+    valueArr = valueArr.filter((i, idx) => valueArr.indexOf(i) === idx)
+    let arr = data.match(getter.langReg())
+    arr.forEach((res, idx) => {
+        if (idx > 1) return;
+        res = res.slice(3, res.length - 1);
+        //生成语言包
+        let objArr = res.replace(/\r\n/g, '\n').split('\n');
+        objArr.forEach(item => {
+            valueArr.forEach((v, i) => {
+                try {
+                    if (new Function(`return Object.keys({${item}})[0] `)() === v) {
+                        set.add(i);
+                    }
+                } catch (error) {
+                    console.log('error:'+item);
+                    console.log(error);
+                }
+            })
+        })
+        valueArr.forEach((v, i) => {
+            if (!v.startsWith('\"') && !v.startsWith('\'')) {
+                v = `"${v}"`;
+            }
+            if (![...set].includes(i)) {
+                objArr.unshift(`    ${v}:${v},`);
+            } else {
+                warningArr.push(v);
+            }
+        })
+        data = data.replace(arr[idx], ['{', ...objArr, '}'].join('\n'));
+    });
+    let json = data.match(/\{(.|\n|\r\n)*\}/g)[0];
+    json = json.slice(1, json.length - 1);
+    let resArr = json.replace(/\r\n/g, '\n').split('\n');
+    return resArr
+}
 function translateKeyValue(data, value) {
+    if (getter.isNewSIS) {
+        return translateKeyValueForNewSIS(data, value);
+    }
     let json = data.match(/\{(.|\n|\r\n)*\}/g)[0];
     json = json.slice(1, json.length - 1);
     let valueArr = value.map(i => i.label.trim());
+    valueArr = valueArr.filter((i, idx) => valueArr.indexOf(i) === idx)
     //生成语言包
     let objArr = json.replace(/\r\n/g, '\n').split('\n');
 
@@ -94,16 +144,43 @@ function markLog(str) {
 }
 
 function translateLangFile(file, value) {
-    Promise.all([modifyFile(path.join(file.path.slice(1), '../lang.cn.js'), value),
-    modifyFile(path.join(file.path.slice(1), '../lang.en.js'), value)
-    ]).then(() => {
+    let files = getter.isNewSIS ? ['../lang.ts'] : ['../lang.cn.js', '../lang.en.js'], proArr = [];
+    files.forEach(cur => {
+        proArr.push(modifyFile(path.join(file.path.slice(1), cur), value));
+    })
+    Promise.all(proArr).then(() => {
         if (warningArr.length) {
             window.showWarningMessage('语言包内容已存在:\r\n' + [...new Set(warningArr)].join(','));
         }
     })
 
 }
-
+let map = new Map();
+function checkLangKey(key) {
+    var rOption = {
+        flags: 'r',
+        encoding: 'utf8',
+        mode: 666
+    }
+    let uri = window.activeTextEditor.document.uri, keys, _path = uri.path.slice(1);
+    if (map.has(_path)) {
+        keys = map.get(_path);
+    } else {
+        let p = path.join(_path, getter.isNewSIS ? '../lang.ts' : '../lang.cn.js');
+        let data = fs.readFileSync(p, rOption);
+        let obj1 = new Function(`return ${data.match(getter.langReg())[0]}`)();
+        if (getter.isNewSIS) {
+            let res = fs.readFileSync(path.join(workspace.rootPath, './src/lang/common.js'), rOption);
+            let obj2 = new Function(`return ${res.match(getter.langReg())[0]}`)();
+            keys = Object.keys(Object.assign(obj1, obj2));
+            // window.activeTextEditor
+        } else {
+            keys = Object.keys(obj1);
+        }
+        map.set(_path, keys)
+    }
+    return keys.includes(key.replace(/^['"]|['"]$/g, ''));
+}
 module.exports = function scaningFile() {
     console.log("scaningFile is active!");
     var items = [];
@@ -113,12 +190,12 @@ module.exports = function scaningFile() {
     }
     var text = activeEditor.document.getText();
     var match, reg;
-    if (activeEditor.document.languageId == 'html') {
+    if (['html', 'vue'].includes(activeEditor.document.languageId)) {
         reg = /([\u4e00-\u9fa5]+)/g
-    } else if (activeEditor.document.languageId == 'javascript') {
+    } else if (['typescriptreact', 'javascript', 'typescript'].includes(activeEditor.document.languageId)) {
         reg = /([\'].*?[\u4e00-\u9fa5]+.*?[\'])|([\"].*?[\u4e00-\u9fa5]+.*?[\"])/g
     } else {
-        window.showErrorMessage('请在js文件或者html文件下执行此命令!');
+        window.showErrorMessage('当前文件类型不支持检索!');
         return;
     }
     while (match = reg.exec(text)) {
@@ -126,9 +203,18 @@ module.exports = function scaningFile() {
         if (match[0].includes('$lang')) continue;
         var startPos = activeEditor.document.positionAt(match.index);
         var endPos = activeEditor.document.positionAt(match.index + match[0].length);
-        let reg = new RegExp(`(\\$)*lang\\[(\\'|\\")*${match[0]}(\\'|\\")*\\]`, 'g')
+        let reg;
+        if (['typescriptreact', 'typescript', 'vue'].includes(activeEditor.document.languageId)) {
+            reg = new RegExp(`(\\$)t\\((\\'|\\")*${match[0]}(\\'|\\")*\\)`, 'g')
+        } else {
+            reg = new RegExp(`(\\$)*lang\\[(\\'|\\")*${match[0]}(\\'|\\")*\\]`, 'g')
+        }
         let lineText = window.activeTextEditor.document.lineAt(startPos.line).text;
-        if (reg.test(lineText)) continue;
+        if (reg.test(lineText)) {
+            if (checkLangKey(match[0])) {
+                continue;
+            }
+        }
         if (lineText.trim().startsWith('//') || lineText.trim().startsWith('<!--')) continue;
         items.push({
             label: match[0].trim(),
@@ -136,6 +222,7 @@ module.exports = function scaningFile() {
             range: new vsc.Range(startPos, endPos)
         })
     }
+    map.clear();
     if (items.length) {
         window.showQuickPick(items, {
             onDidSelectItem: (value) => {
@@ -161,13 +248,20 @@ module.exports = function scaningFile() {
                     label: '$scope.$lang'
                 }, {
                     label: '$ctrl.$lang'
+                }, {
+                    label: '$t'
+                }, {
+                    label: 'this.$t'
                 }]
                 window.showQuickPick(pickItem).then(langType => {
                     window.activeTextEditor.edit(edit => {
                         value.forEach(item => {
-                            let isHtml = activeEditor.document.languageId == 'html';
-                            let placeText = langType.label + `[${isHtml ? `'${item.label}'` : item.label}]`;
-                            edit.replace(item.range, isHtml ? `{{::${placeText}}}` : placeText);
+                            let isHtml = ['html', 'vue'].includes(activeEditor.document.languageId);
+                            let addBracket = str => (['typescriptreact', 'typescript', 'vue'].includes(activeEditor.document.languageId) ? `(${str})` : `[${str}]`)
+                            let placeText = langType.label + addBracket(`${isHtml ? `'${item.label}'` : item.label}`);
+                            if (!item.description.includes(placeText)) {
+                                edit.replace(item.range, isHtml ? `{{${placeText}}}` : placeText);
+                            }
                         })
                     })
                     translateLangFile(activeEditor.document.uri, value)
