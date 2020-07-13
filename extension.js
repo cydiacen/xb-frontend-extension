@@ -12,6 +12,7 @@ var {
     StatusBarItem,
     TextDocument,
     TextEditorEdit,
+
 } = require('vscode');
 const fs = require("fs");
 const path = require("path");
@@ -116,13 +117,65 @@ function string2Array(str) {
     }
     return arr;
 }
+// const gitExtension = vsc.scm.createSourceControl('git', 'Git')
+// const git = gitExtension.getAPI(1);
+// let { findGitPath } = require('./locator.js');
+let { findGitPath } = require('./locator.js')
+let pro = require('child_process');
+findGitPath().then(data => {
+    vsc.gitPath = data.path;
+})
+
+// console.log(findGitPath());
+// pro.ChildProcess
+//脚本命令行快捷指令
+const keys = {
+    $$version: () => {
+        return pro.execSync('cd ' + vsc.workspace.rootPath + ';' + vsc.gitPath + ' rev-parse --abbrev-ref HEAD', { encoding: 'UTF-8' }).trim();;
+    },
+    $$ip: () => {
+        const os = require('os');
+        const osType = os.type(); //系统类型
+        const netInfo = os.networkInterfaces(); //网络信息
+        let ip = '';
+        if (osType === 'Windows_NT') {
+            for (let dev in netInfo) {
+                //win7的网络信息中显示为本地连接，win10显示为以太网
+                if (dev === '本地连接' || dev === '以太网') {
+                    for (let j = 0; j < netInfo[dev].length; j++) {
+                        if (netInfo[dev][j].family === 'IPv4') {
+                            ip = netInfo[dev][j].address;
+                            break;
+                        }
+                    }
+                }
+            }
+
+        } else if (osType === 'Linux') {
+            ip = netInfo.eth0[0].address;
+        }
+
+        return ip;
+    }
+};
+function translateScript(script) {
+    let res;
+    Object.keys(keys).forEach((v) => {
+        if (script.includes(v)) {
+            let _v = v.replace(/\$/g, '\\$')
+            script = script.replace(new RegExp(_v, 'g'), keys[v]())
+            return;
+        }
+    })
+    return script;
+}
 const nodeDependencies_1 = require("./xbView");
 function activate(context) {
     // vsc.window.showInformationMessage('欢迎使用One Enough！')
     // The command has been defined in the package.json file
     // Now provide the implementation of the command with  registerCommand
     // The commandId parameter must match the command field in package.json
-
+    console.log('欢迎使用One Enough！');
     let wordCounter = new WordCount();
     let controller = new WordCounterController(wordCounter);
     commands.registerCommand('extension.scaningFile', () => {
@@ -138,18 +191,29 @@ function activate(context) {
     vsc.commands.registerCommand('extension.runScript', module => {
         let runText = "";
         if (module.nodes) {
-            let scripts = module.nodes.map(i => i.script);
+            let scripts = module.nodes.map(i => translateScript(i.script));
             // if (os.platform().includes('darwin')) {
             //     runText = scripts.join(' && ');
             // } else {
             runText = scripts.join(' ; ');
             // }
         } else {
-            runText = module.command.arguments[0].script;
+            runText = translateScript(module.command.arguments[0].script);
         }
-        let ter = vsc.window.createTerminal(module.title || module.label);
-        ter.show();
-        ter.sendText(runText);
+        let currentTer;
+        vsc.window.terminals.every(ter => {
+            if (ter._creationOptions.name === 'one-enough-pad') {
+                currentTer = ter;
+                return false;
+            }
+            return true;
+        })
+        if (!currentTer) {
+            currentTer = vsc.window.createTerminal('one-enough-pad');
+        }
+        currentTer.show();
+        currentTer.sendText(runText);
+        // ter.dispose();
     });
     vsc.commands.registerCommand('nodeDependencies.addEntry', () => vsc.window.showInformationMessage(`Successfully called add entry.`));
     vsc.commands.registerCommand('nodeDependencies.editEntry', (node) => {
