@@ -16,7 +16,7 @@ export default $lang`
 var set, warningArr;
 let getter = {
     get isNewSIS() {
-        return ['typescriptreact', 'vue', 'typescript'].includes(window.activeTextEditor.document.languageId);
+        return ['typescriptreact', 'vue', 'typescript'].includes(window.activeTextEditor.document.languageId) || workspace.name == 'SISVue';
     },
     langReg() {
         return this.isNewSIS ? /\{(.|\n|\r\n)*?\}/g : /\{(.|\n|\r\n)*\}/g;
@@ -26,7 +26,7 @@ function translateKeyValueForNewSIS(data, value) {
 
     let valueArr = value.map(i => i.label.trim());
     valueArr = valueArr.filter((i, idx) => valueArr.indexOf(i) === idx)
-    let arr = data.match(getter.langReg())
+    let arr = getJSON(data)
     arr.forEach((res, idx) => {
         if (idx > 1) return;
         res = res.slice(3, res.length - 1);
@@ -39,7 +39,7 @@ function translateKeyValueForNewSIS(data, value) {
                         set.add(i);
                     }
                 } catch (error) {
-                    console.log('error:'+item);
+                    console.log('error:' + item);
                     console.log(error);
                 }
             })
@@ -146,7 +146,11 @@ function markLog(str) {
 function translateLangFile(file, value) {
     let files = getter.isNewSIS ? ['../lang.ts'] : ['../lang.cn.js', '../lang.en.js'], proArr = [];
     files.forEach(cur => {
-        proArr.push(modifyFile(path.join(file.path.slice(1), cur), value));
+        let curPath = path.join(file.path.slice(1), cur)
+        if (!fs.existsSync(curPath)) {
+            curPath = curPath.replace(/.ts$/g, '.js');
+        }
+        proArr.push(modifyFile(curPath, value));
     })
     Promise.all(proArr).then(() => {
         if (warningArr.length) {
@@ -156,6 +160,26 @@ function translateLangFile(file, value) {
 
 }
 let map = new Map();
+function getJSON(content) {
+    let arr = content.split(''), count = 0, start, end,res=[];
+    for (let idx = 0; idx < arr.length; idx++) {
+        const s = arr[idx];
+        if (s === '{') {
+            if (count === 0) {
+                start = idx;
+            }
+            count++;
+        }
+        if (s === '}') {
+            count--;
+            if (count === 0) {
+                end = idx;
+                res.push(content.slice(start, end+1));
+            }
+        }
+    }
+    return res;
+}
 function checkLangKey(key) {
     var rOption = {
         flags: 'r',
@@ -167,11 +191,16 @@ function checkLangKey(key) {
         keys = map.get(_path);
     } else {
         let p = path.join(_path, getter.isNewSIS ? '../lang.ts' : '../lang.cn.js');
+        if (!fs.existsSync(p)) {
+            p = p.replace(/.ts$/g, '.js');
+        }
         let data = fs.readFileSync(p, rOption);
-        let obj1 = new Function(`return ${data.match(getter.langReg())[0]}`)();
+        let dt = getJSON(data)[0];
+        let obj1 = new Function(`return ${dt}`)();
         if (getter.isNewSIS) {
             let res = fs.readFileSync(path.join(workspace.rootPath, './src/lang/common.js'), rOption);
-            let obj2 = new Function(`return ${res.match(getter.langReg())[0]}`)();
+            let _dt = getJSON(res)[0];
+            let obj2 = new Function(`return ${_dt}`)();
             keys = Object.keys(Object.assign(obj1, obj2));
             // window.activeTextEditor
         } else {
@@ -185,6 +214,7 @@ module.exports = function scaningFile() {
     console.log("scaningFile is active!");
     var items = [];
     let activeEditor = window.activeTextEditor;
+    console.log(workspace);
     if (!activeEditor || !activeEditor.document) {
         return;
     }
@@ -199,28 +229,36 @@ module.exports = function scaningFile() {
         return;
     }
     while (match = reg.exec(text)) {
-        //包含$lang的文案不操作
-        if (match[0].includes('$lang')) continue;
-        var startPos = activeEditor.document.positionAt(match.index);
-        var endPos = activeEditor.document.positionAt(match.index + match[0].length);
-        let reg;
-        if (['typescriptreact', 'typescript', 'vue'].includes(activeEditor.document.languageId)) {
-            reg = new RegExp(`(\\$)t\\((\\'|\\")*${match[0]}(\\'|\\")*\\)`, 'g')
-        } else {
-            reg = new RegExp(`(\\$)*lang\\[(\\'|\\")*${match[0]}(\\'|\\")*\\]`, 'g')
-        }
-        let lineText = window.activeTextEditor.document.lineAt(startPos.line).text;
-        if (reg.test(lineText)) {
-            if (checkLangKey(match[0])) {
-                continue;
+        try {
+            //包含$lang的文案不操作
+            if (match[0].includes('$lang')) continue;
+            var startPos = activeEditor.document.positionAt(match.index);
+            var endPos = activeEditor.document.positionAt(match.index + match[0].length);
+            let reg;
+            if (['typescriptreact', 'typescript', 'vue'].includes(activeEditor.document.languageId)) {
+                reg = new RegExp(`(\\$)t\\((\\'|\\")*${match[0]}(\\'|\\")*`, 'g')
+            } else {
+                reg = new RegExp(`(\\$)*lang\\[(\\'|\\")*${match[0]}(\\'|\\")*\\]`, 'g')
             }
+            let lineText = window.activeTextEditor.document.lineAt(startPos.line).text;
+            if(match[0]==="'排课结果存在冲突'"){
+                debugger
+            }
+            if (reg.test(lineText)) {
+                if (checkLangKey(match[0])) {
+                    continue;
+                }
+            }
+            if (lineText.trim().startsWith('//') || lineText.trim().startsWith('<!--')) continue;
+            items.push({
+                label: match[0].trim(),
+                description: window.activeTextEditor.document.lineAt(startPos.line).text.trim(),
+                range: new vsc.Range(startPos, endPos)
+            })
+        } catch (error) {
+            console.log(error);
         }
-        if (lineText.trim().startsWith('//') || lineText.trim().startsWith('<!--')) continue;
-        items.push({
-            label: match[0].trim(),
-            description: window.activeTextEditor.document.lineAt(startPos.line).text.trim(),
-            range: new vsc.Range(startPos, endPos)
-        })
+
     }
     map.clear();
     if (items.length) {
@@ -257,7 +295,7 @@ module.exports = function scaningFile() {
                     window.activeTextEditor.edit(edit => {
                         value.forEach(item => {
                             let isHtml = ['html', 'vue'].includes(activeEditor.document.languageId);
-                            let addBracket = str => (['typescriptreact', 'typescript', 'vue'].includes(activeEditor.document.languageId) ? `(${str})` : `[${str}]`)
+                            let addBracket = str => (getter.isNewSIS ? `(${str})` : `[${str}]`);
                             let placeText = langType.label + addBracket(`${isHtml ? `'${item.label}'` : item.label}`);
                             if (!item.description.includes(placeText)) {
                                 edit.replace(item.range, isHtml ? `{{${placeText}}}` : placeText);
