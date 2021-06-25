@@ -1,28 +1,29 @@
-"use strict";
-Object.defineProperty(exports, "__esModule", { value: true });
-exports.PortIcon = void 0;
-//@ts-ignore
-const prettier_1 = require("./prettier");
-const vscode_1 = require("vscode");
-const vscode = require("vscode");
-const path = require("path");
+// import { window, StatusBarItem, StatusBarAlignment } from "vscode";
+const { window, StatusBarItem, StatusBarAlignment } = require('vscode')
+// import * as vscode from "vscode";
+const vscode = require('vscode')
+// import * as path from "path";
+const path = require('path')
 const fs = require("fs");
-// const prettier = require('prettier')
-// const getFileInfo = {} as any
-//  const resolveConfig = {sync:{}as any}
-//  const format ={} as any
+
+const prettier = require('prettier')
+
+
+
 class PortIcon {
+    // 定义一个状态栏的属性
+    syncBar;
+    commands = {
+        sync: "port.sync",
+        createModel: "port.create"
+    };
+    emunList;
     constructor() {
-        this.commands = {
-            sync: "port.sync",
-            createModel: "port.create"
-        };
-        this.syncBar = vscode_1.window.createStatusBarItem(vscode_1.StatusBarAlignment.Left);
+        this.syncBar = window.createStatusBarItem(StatusBarAlignment.Left);
         this.createCommands();
         this.syncBar.command = this.commands.sync;
         this.activePort();
         this.emunList = [];
-        this.myEnumList = [];
     }
     activePort() {
         this.syncBar.text = "sync";
@@ -37,10 +38,10 @@ class PortIcon {
     transform(currentModel, used) {
         let list = currentModel.split('\r\n\t');
         let data = {};
+        let enumList = [];
         if (list.length % 2 !== 1) {
-            vscode_1.window.showErrorMessage('出错了！格式不对');
-        }
-        else {
+            window.showErrorMessage('出错了！格式不对');
+        } else {
             for (let i = 1; i < list.length; i = i + 2) {
                 let filed = list[i + 1].replace(/\r\n/g, '').replace('}', '').replace('?', '').split(': ');
                 let types = filed[1].split('[]');
@@ -52,10 +53,9 @@ class PortIcon {
                         isArray: types.length === 2,
                         desc: desc
                     };
-                }
-                else {
+                } else {
                     if (this.emunList.includes(`${types[0]}.ts`)) {
-                        this.myEnumList.push(types[0]);
+                        enumList.push(types[0]);
                         data[filed[0]] = {
                             name: filed[0],
                             type: types[0],
@@ -63,8 +63,7 @@ class PortIcon {
                             isArray: types.length === 2,
                             desc: desc,
                         };
-                    }
-                    else {
+                    } else {
                         if (!used.includes(types[0])) {
                             used.push(types[0]);
                             data[filed[0]] = {
@@ -75,28 +74,28 @@ class PortIcon {
                                 depend: this.transform(this.findInterfaceFile(types[0]), used)
                             };
                         }
+
                     }
+
                 }
+
             }
-            return { data };
+            return { data, enumList };
         }
     }
     findInterfaceFile(name) {
         const editor = vscode.window.activeTextEditor;
-        if (!editor) {
-            return;
-        }
+        if (!editor) { return; }
         let selection = editor.selection;
         let _targetDirectory = path.resolve(editor.document.uri.fsPath, '../models');
         let _sourceDirectory = path.resolve(editor.document.uri.fsPath, '../../../client');
         let currentName;
         if (name) {
             currentName = name;
-        }
-        else {
+        } else {
             currentName = editor.document.getText(selection);
         }
-        let currentModel = null;
+        let currentModel = null
         if (fs.existsSync(_targetDirectory)) {
             const list = fs.readdirSync(_sourceDirectory);
             list.forEach((controller) => {
@@ -109,20 +108,20 @@ class PortIcon {
                         }
                     });
                 }
+
             });
             return currentModel;
-        }
-        else {
-            vscode_1.window.showErrorMessage('出错了！当前目录没有models文件夹');
+        } else {
+            window.showErrorMessage('出错了！当前目录没有models文件夹');
         }
     }
     createModel() {
         const editor = vscode.window.activeTextEditor;
-        if (!editor) {
-            return;
-        }
+        if (!editor) { return; }
         let selection = editor.selection;
+
         let name = editor.document.getText(selection);
+
         let _targetDirectory = path.resolve(editor.document.uri.fsPath, '../models');
         let _enumDirectory = path.resolve(editor.document.uri.fsPath, '../../../client/Enum');
         this.emunList = fs.readdirSync(_enumDirectory);
@@ -131,12 +130,13 @@ class PortIcon {
         let context = {
             text: `
         import { ApiProperty } from '@nestjs/swagger'
-        ${this.myEnumList.map((i) => {
+        ${data?.enumList.map((i) => {
                 return `import { ${i} } from '@/client/Enum/${i}'`;
             }).join('\r\n')}
-        ${this.myEnumList.length ? "import { transformEnumToSwagger } from '@/utils/transform'" : ''}
+        ${data?.enumList.length ? "import { transformEnumToSwagger } from '@/utils/transform'" : ''}
         `
         };
+
         //已存在class分支
         const list = fs.readdirSync(_targetDirectory);
         let fileName = name.replace(/(?<=[a-z])([A-Z])/g, '-$1').toLowerCase() + '.ts';
@@ -145,7 +145,7 @@ class PortIcon {
                 if (!text) {
                     return;
                 }
-                this.createClass(name, data === null || data === void 0 ? void 0 : data.data, context, []);
+                this.createClass(name, data?.data, context, []);
                 const filePath = path.resolve(_targetDirectory, fileName);
                 fs.writeFileSync(filePath, context.text);
                 this.prettierFiles(filePath);
@@ -153,39 +153,43 @@ class PortIcon {
                     builder.insert(new vscode.Position(selection.end.line, selection.end.character), 'Dto');
                 });
             });
-        }
-        else {
-            this.createClass(name, data === null || data === void 0 ? void 0 : data.data, context, []);
+        } else {
+            this.createClass(name, data?.data, context, []);
             const filePath = path.resolve(_targetDirectory, fileName);
             fs.writeFileSync(filePath, context.text);
             this.prettierFiles(filePath);
             editor.edit(builder => {
-                builder.insert(new vscode.Position(0, 0), `import { ${name}Dto } from './models/${fileName.split('.')[0]}'\r\n`);
+                builder.insert(new vscode.Position(0, 0), `import { ${name}Dto } from './models/${fileName}'\r\n`);
                 builder.insert(new vscode.Position(selection.end.line, selection.end.character), 'Dto');
             });
         }
+
+
+
     }
     /** 格式化文件 */
     prettierFiles(file) {
         let rootpath = vscode.workspace.rootPath;
         const prettierConfigPath = require.resolve(rootpath + '/.prettierrc.yml');
-        const options = prettier_1.resolveConfig.sync(file, {
+        const options = prettier.resolveConfig.sync(file, {
             config: prettierConfigPath,
-        });
-        const fileInfo = prettier_1.getFileInfo.sync(file);
+        })
+        const fileInfo = prettier.getFileInfo.sync(file)
         if (fileInfo.ignored) {
-            return;
+            return
         }
         try {
-            const input = fs.readFileSync(file, 'utf8');
-            const withParserOptions = Object.assign(Object.assign({}, options), { parser: fileInfo.inferredParser });
-            const output = prettier_1.format(input, withParserOptions);
-            if (output !== input) {
-                fs.writeFileSync(file, output, 'utf8');
+            const input = fs.readFileSync(file, 'utf8')
+            const withParserOptions = {
+                ...options,
+                parser: fileInfo.inferredParser,
             }
-        }
-        catch (e) {
-            console.log('格式化出错了');
+            const output = prettier.format(input, withParserOptions)
+            if (output !== input) {
+                fs.writeFileSync(file, output, 'utf8')
+            }
+        } catch (e) {
+            console.log('格式化出错了')
         }
     }
     createClass(name, data, context, created) {
@@ -205,13 +209,12 @@ class PortIcon {
                 ${i.name}: ${i.type}`;
             }
             if (i.isArray) {
-                const Dto = ['number', 'string', 'boolean', 'object', 'undefined'].includes(i.type) ? '' : 'Dto';
-                let typeName = i.type;
-                if (!Dto) {
-                    typeName = typeName[0].toUpperCase() + typeName.slice(1);
-                }
-                else {
-                    typeName += 'Dto';
+                const Dto = ['number','string','boolean','object','undefined'].includes(i.type)?'':'Dto'
+                let typeName = i.type
+                if(!Dto){
+                    typeName = typeName[0].toUpperCase()+typeName.slice(1)
+                }else{
+                    typeName+='Dto'
                 }
                 return `
                 @ApiProperty({
@@ -220,8 +223,7 @@ class PortIcon {
                     isArray: true,
                 })
                 ${i.name}: ${i.type}${Dto}[]`;
-            }
-            else {
+            } else {
                 return `
                 @ApiProperty({
                     description: '${i.desc}'
@@ -243,8 +245,10 @@ class PortIcon {
         // var process = require('child_process');
         // process.exec(`yarn install`, function(error: any, stdout: any, stderr: any) {
         //     console.log(error, stdout, stderr);
-        //     window.showInformationMessage( "接口更新成功");
+
+            window.showInformationMessage( "功能待完成");
         // });
+
     }
     //   public watchLocalFile() {
     //     const lockWatcher = vscode.workspace.createFileSystemWatcher(
@@ -256,6 +260,7 @@ class PortIcon {
     //     let lockDispose = lockWatcher.onDidChange(async () => {
     //       this.activePort();
     //     });
+
     //     this.dispose = () => {
     //       lockDispose.dispose();
     //     };
@@ -265,5 +270,5 @@ class PortIcon {
         this.syncBar.dispose();
     }
 }
-exports.PortIcon = PortIcon;
-//# sourceMappingURL=port.js.map
+
+module.exports.PortIcon = PortIcon

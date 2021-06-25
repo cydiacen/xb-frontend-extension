@@ -18,7 +18,6 @@ const fs = require("fs");
 const path = require("path");
 const os = require("os");
 const scaningFile = require("./translate");
-const {PortIcon} = require('./port.js')
 let regex = [
     /(bindings)\s*:\s*{([^}]*)/g, //匹配bindings
     /<([^>^/]*)$/g, //匹配标签名称
@@ -238,8 +237,16 @@ function activate(context) {
     // Add to a list of disposables which are disposed when this extension is deactivated.
     context.subscriptions.push(controller);
     context.subscriptions.push(wordCounter);
-    const portIcon = new PortIcon()
-    context.subscriptions.push(portIcon);
+    try {
+        const {PortIcon} = require('./port.js')
+        // window.showErrorMessage(JSON.stringify( PortIcon))
+        const portIcon = new PortIcon()
+        context.subscriptions.push(portIcon);
+    } catch (error) {
+        window.showErrorMessage("ex error:"+JSON.stringify( error))
+        // }
+
+    }
     let classServer = new ClassServer();
     context.subscriptions.push(vsc.languages.registerCompletionItemProvider([
         'html',
