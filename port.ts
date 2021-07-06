@@ -69,15 +69,15 @@ export class PortIcon {
                 }else{
                     if(!used.includes(types[0])){
                         used.push(types[0]);
-                        data[filed[0]]={
-                            name:filed[0],
-                            type:types[0],
-                            isArray:types.length ===2,
-                            desc:desc,
-                            depend:this.transform(this.findInterfaceFile(types[0]),used)
-                        };
                     }
 
+                    data[filed[0]]={
+                        name:filed[0],
+                        type:types[0],
+                        isArray:types.length ===2,
+                        desc:desc,
+                        depend:this.transform(this.findInterfaceFile(types[0]),used)
+                    };
                 }
 
             }
@@ -90,8 +90,8 @@ export class PortIcon {
     const editor = vscode.window.activeTextEditor;
     if (!editor) { return ;}
     let selection = editor.selection;
-    let _targetDirectory = path.resolve(editor.document.uri.fsPath, '../models');
-    let _sourceDirectory = path.resolve(editor.document.uri.fsPath, '../../../client');
+    let _targetDirectory =  path.resolve(editor.document.uri.fsPath,'../../models');
+    let _sourceDirectory = path.resolve(vscode.workspace.workspaceFolders![0].uri.path, './src/client');
     let currentName:any;
     if(name){
         currentName = name;
@@ -103,10 +103,10 @@ export class PortIcon {
         const list = fs.readdirSync(_sourceDirectory);
         list.forEach((controller:string) => {
             if(controller !=='Enum'){
-                const types = fs.readdirSync(path.resolve(editor.document.uri.fsPath, `../../../client/${controller}/Type`));
+                const types = fs.readdirSync(path.resolve(vscode.workspace.workspaceFolders![0].uri.path,`./src/client/${controller}/Type`));
                 types.forEach((dto:string) => {
                     if(dto === `${currentName}.ts`){
-                        currentModel = fs.readFileSync(path.resolve(editor.document.uri.fsPath, `../../../client/${controller}/Type/${dto}`),'utf8');
+                        currentModel = fs.readFileSync(path.resolve(vscode.workspace.workspaceFolders![0].uri.path, `./src/client/${controller}/Type/${dto}`),'utf8');
                        return;
                     }
                 });
@@ -125,15 +125,15 @@ export class PortIcon {
    
     let name =editor.document.getText(selection);
 
-    let _targetDirectory = path.resolve(editor.document.uri.fsPath, '../models');
-    let _enumDirectory = path.resolve(editor.document.uri.fsPath, '../../../client/Enum');
+    let _targetDirectory = path.resolve(editor.document.uri.fsPath, '../../models');
+    let _enumDirectory = path.resolve(vscode.workspace.workspaceFolders![0].uri.path, './src/client/Enum');
     this.emunList = fs.readdirSync(_enumDirectory);
     let currentModel = this.findInterfaceFile();
     let data = this.transform(currentModel,[]);
     let context = {
         text:`
         import { ApiProperty } from '@nestjs/swagger'
-        ${this.myEnumList.map((i:string)=>{
+        ${this.myEnumList.filter((i,idx)=>this.myEnumList.indexOf(i)===idx).map((i:string)=>{
             return `import { ${i} } from '@/client/Enum/${i}'`;
         }).join('\r\n')}
         ${this.myEnumList.length ? "import { transformEnumToSwagger } from '@/utils/transform'":''}
@@ -162,7 +162,7 @@ export class PortIcon {
         fs.writeFileSync(filePath, context.text);
         this.prettierFiles(filePath);
         editor.edit(builder => {
-            builder.insert(new vscode.Position(0, 0),`import { ${name}Dto } from './models/${fileName.split('.')[0]}'\r\n`);
+            builder.insert(new vscode.Position(0, 0),`import { ${name}Dto } from '../models/${fileName.split('.')[0]}'\r\n`);
             builder.insert(new vscode.Position(selection.end.line, selection.end.character),'Dto');
          });
     }
