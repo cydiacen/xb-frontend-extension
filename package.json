@@ -57,6 +57,10 @@
         "title": "interface to Nest Class"
       },
       {
+        "command": "port.create",
+        "title": "interface to Nest Class"
+      },
+      {
         "command": "extension.scaningFile",
         "title": "检索当前文件可能需要双语的文案",
         "category": "sis"
