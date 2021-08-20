@@ -239,13 +239,17 @@ function activate(context) {
     context.subscriptions.push(wordCounter);
     try {
         const {PortIcon} = require('./port.js')
-        // window.showErrorMessage(JSON.stringify( PortIcon))
         const portIcon = new PortIcon()
         context.subscriptions.push(portIcon);
     } catch (error) {
         window.showErrorMessage("ex error:"+JSON.stringify( error))
-        // }
-
+    }
+    try {
+        const {CreateVueComponent} = require('./createVue3Component.js')
+        const createVueComponent = new CreateVueComponent()
+        context.subscriptions.push(createVueComponent);
+    } catch (error) {
+        window.showErrorMessage("ex error:"+JSON.stringify( error))
     }
     let classServer = new ClassServer();
     context.subscriptions.push(vsc.languages.registerCompletionItemProvider([

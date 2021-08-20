@@ -24,6 +24,13 @@
   "main": "./extension",
   "contributes": {
     "menus": {
+      "explorer/context": [
+        {
+            "command": "extension.createVue3Component",
+            "when": "explorerResourceIsFolder",
+            "group": "navigation"
+        }
+      ],
       "editor/context": [
         {
           "command": "port.create",
@@ -53,8 +60,12 @@
     },
     "commands": [
       {
-        "command": "port.create",
-        "title": "interface to Nest Class"
+        "command": "extension.createVue3Component",
+        "title": "Create Vue3 Component folder"
+      },
+      {
+        "command": "port.sync",
+        "title": "生成api"
       },
       {
         "command": "port.create",
