@@ -2,7 +2,7 @@
   "name": "xb-one-enough",
   "displayName": "XiaoBao One Enough",
   "description": "just for xiaobao online frontend developer",
-  "version": "0.1.5",
+  "version": "0.1.7",
   "publisher": "cydiacen",
   "engines": {
     "vscode": "^1.55.0"

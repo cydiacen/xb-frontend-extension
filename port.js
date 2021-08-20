@@ -88,7 +88,7 @@ class PortIcon {
         }
         let selection = editor.selection;
         let _targetDirectory = path.resolve(editor.document.uri.fsPath, '../../models');
-        let _sourceDirectory = path.resolve(vscode.workspace.workspaceFolders[0].uri.fsPath, './src/client');
+        let _sourceDirectory = path.resolve(vscode.workspace.workspaceFolders[0].uri.path, './src/client');
         let currentName;
         if (name) {
             currentName = name;
@@ -101,10 +101,10 @@ class PortIcon {
             const list = fs.readdirSync(_sourceDirectory);
             list.forEach((controller) => {
                 if (controller !== 'Enum') {
-                    const types = fs.readdirSync(path.resolve(vscode.workspace.workspaceFolders[0].uri.fsPath, `./src/client/${controller}/Type`));
+                    const types = fs.readdirSync(path.resolve(vscode.workspace.workspaceFolders[0].uri.path, `./src/client/${controller}/Type`));
                     types.forEach((dto) => {
                         if (dto === `${currentName}.ts`) {
-                            currentModel = fs.readFileSync(path.resolve(vscode.workspace.workspaceFolders[0].uri.fsPath, `./src/client/${controller}/Type/${dto}`), 'utf8');
+                            currentModel = fs.readFileSync(path.resolve(vscode.workspace.workspaceFolders[0].uri.path, `./src/client/${controller}/Type/${dto}`), 'utf8');
                             return;
                         }
                     });
@@ -122,9 +122,11 @@ class PortIcon {
             return;
         }
         let selection = editor.selection;
+        this.emunList = [];
+        this.myEnumList = [];
         let name = editor.document.getText(selection);
         let _targetDirectory = path.resolve(editor.document.uri.fsPath, '../../models');
-        let _enumDirectory = path.resolve(vscode.workspace.workspaceFolders[0].uri.fsPath, './src/client/Enum');
+        let _enumDirectory = path.resolve(vscode.workspace.workspaceFolders[0].uri.path, './src/client/Enum');
         this.emunList = fs.readdirSync(_enumDirectory);
         let currentModel = this.findInterfaceFile();
         let data = this.transform(currentModel, []);
@@ -237,14 +239,19 @@ class PortIcon {
         }
     }
     sync() {
-        // program.command('install').action(()=>{
-        //     console.log(111)
-        // })
-        // var process = require('child_process');
-        // process.exec(`yarn install`, function(error: any, stdout: any, stderr: any) {
-        //     console.log(error, stdout, stderr);
-        //     window.showInformationMessage( "接口更新成功");
-        // });
+        let currentTer;
+        vscode.window.terminals.every(ter => {
+            if (ter.creationOptions.name === 'one-enough-pad') {
+                currentTer = ter;
+                return false;
+            }
+            return true;
+        });
+        if (!currentTer) {
+            currentTer = vscode.window.createTerminal('one-enough-pad');
+        }
+        currentTer.show();
+        currentTer.sendText('yarn run api');
     }
     //   public watchLocalFile() {
     //     const lockWatcher = vscode.workspace.createFileSystemWatcher(
