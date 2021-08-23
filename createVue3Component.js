@@ -4,7 +4,8 @@ exports.CreateVueComponent = void 0;
 const vscode = require("vscode");
 const path = require("path");
 const fs = require("fs");
-
+//@ts-ignore
+const prettier_1 = require("./prettier")
 class CreateVueComponent {
     constructor() {
         this.createCommands();
@@ -55,34 +56,25 @@ class CreateVueComponent {
     }
     /** 格式化文件 */
     prettierFiles(file) {
-        const prettier = require('prettier')
-        const fileInfo = prettier.getFileInfo.sync(file)
+        let rootpath = vscode.workspace.rootPath;
+        const prettierConfigPath = require.resolve(rootpath + '/.prettierrc.yml');
+        const options = prettier_1.resolveConfig.sync(file, {
+            config: prettierConfigPath,
+        });
+        const fileInfo = prettier_1.getFileInfo.sync(file);
         if (fileInfo.ignored) {
-            return
+            return;
         }
         try {
-            const input = fs.readFileSync(file, 'utf8')
-            const withParserOptions = {
-                ...{
-                    printWidth: 120,
-                    tabWidth: 4,
-                    useTabs: true,
-                    semi: false,
-                    trailingComma: 'all',
-                    bracketSpacing: true,
-                    jsxBracketSameLine: false,
-                    arrowParens: 'avoid',
-                    singleQuote: true,
-                    endOfLine: 'crlf'
-                  },
-                parser: fileInfo.inferredParser,
-            }
-            const output = prettier.format(input, withParserOptions)
+            const input = fs.readFileSync(file, 'utf8');
+            const withParserOptions = Object.assign(Object.assign({}, options), { parser: fileInfo.inferredParser });
+            const output = prettier_1.format(input, withParserOptions);
             if (output !== input) {
-                fs.writeFileSync(file, output, 'utf8')
+                fs.writeFileSync(file, output, 'utf8');
             }
-        } catch (e) {
-            console.log('格式化出错了')
+        }
+        catch (e) {
+            console.log('格式化出错了');
         }
     }
 }
